@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CNC Plotter</title>
+  <meta name="description" content="CNC Plotter: plotter de caneta (Pen Plotter) que desenha com a precisão de uma máquina CNC.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='8' fill='%2320242B'/%3E%3Cpath d='M27 13.5A9 9 0 1 0 27 26.5' stroke='%23E4E7EB' stroke-width='3.5' fill='none' stroke-linecap='round'/%3E%3Cpath d='M20 20L24 18.2V21.8Z' fill='%230B0C0E' stroke='%23E4E7EB' stroke-width='.6'/%3E%3Crect x='24' y='17.3' width='14.4' height='5.4' rx='2.5' fill='%23E4E7EB'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;800&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script>
+    /* Aplica o tema antes de a página aparecer, para não piscar */
+    (function () {
+      var t;
+      try { t = localStorage.getItem("tema"); } catch (e) {}
+      if (t !== "claro" && t !== "escuro") {
+        t = window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches ? "escuro" : "claro";
+      }
+      document.documentElement.dataset.tema = t;
+      document.documentElement.classList.add("js");
+    })();
+  </script>
+</head>
+<body>
+
+  <header class="topo">
+    <!-- Logótipo (canto superior esquerdo): o "C" com a ponta da caneta Markal a traçar tinta -->
+    <a class="logo" href="#inicio" data-go="inicio" aria-label="CNC Plotter, ir para o início">
+      <svg class="logo-marca" viewBox="0 0 40 40" aria-hidden="true">
+        <rect x="1" y="1" width="38" height="38" rx="9" fill="#20242B"/>
+        <path d="M27 13.5A9 9 0 1 0 27 26.5" stroke="#E4E7EB" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+        <!-- o traço que entra no círculo é agora uma caneta estilizada -->
+        <g class="logo-caneta">
+          <path d="M20 20L24 18.2V21.8Z" fill="#0B0C0E" stroke="#E4E7EB" stroke-width=".6" stroke-linejoin="round"/>
+          <path d="M24 18.2L26.2 17.5V22.5L24 21.8Z" fill="#AAB1BB"/>
+          <rect x="26.2" y="17.3" width="12" height="5.4" rx="2.5" fill="#E4E7EB"/>
+          <path d="M28.6 20H36.2" stroke="#8F97A3" stroke-width=".8" stroke-linecap="round"/>
+        </g>
+      </svg>
+      <span class="logo-nome">CNC Plotter</span>
+    </a>
+
+    <!-- Menu (canto superior esquerdo): três pontinhos que abrem as páginas com um slide-down -->
+    <div class="menu-caixa">
+      <button type="button" class="menu-botao" id="menu-botao" aria-expanded="false" aria-controls="menu-painel" aria-label="Abrir menu">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="5" r="2.2"/><circle cx="12" cy="12" r="2.2"/><circle cx="12" cy="19" r="2.2"/></svg>
+      </button>
+      <nav class="menu" id="menu-painel" aria-label="Principal">
+        <div class="menu-interior">
+          <div class="menu-lista">
+            <button type="button" data-go="inicio" style="--i:0">Início</button>
+            <button type="button" data-go="informacoes" style="--i:1">Informações</button>
+            <button type="button" data-go="problemas" style="--i:2">Problemas</button>
+            <button type="button" data-go="downloads" style="--i:3">Downloads</button>
+            <button type="button" data-go="controller" style="--i:4">Plotter Controller</button>
+            <button type="button" data-go="suporte" style="--i:5">Suporte</button>
+          </div>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- TELA: INÍCIO -->
+    <section id="view-inicio" class="tela tela-inicio" aria-labelledby="t-inicio">
+      <div class="inicio-texto">
+        <h1 id="t-inicio" tabindex="-1">CNC Plotter</h1>
+        <p class="lead">Plotter de caneta (Pen Plotter): desenha com a precisão de uma máquina CNC.</p>
+        <div class="acoes">
+          <button type="button" class="btn btn-principal" data-go="informacoes">Ver informações</button>
+          <button type="button" class="btn" data-go="suporte">Falar com o suporte</button>
+        </div>
+      </div>
+
+      <!--
+        A plotter é desenhada por plotter3d.js (guias MGN15H, motores Nema 17, peças impressas em PLA, servo SG90).
+        Quando tiveres uma foto real, apaga o conteúdo desta div e usa:
+        <img src="imagens/plotter.jpg" alt="Plotter de caneta CNC">
+      -->
+      <div class="maquina" id="hero-plotter"></div>
+    </section>
+
+    <!-- TELA: INFORMAÇÕES -->
+    <section id="view-informacoes" class="tela tela-texto tela-larga" aria-labelledby="t-info" hidden>
+      <h1 id="t-info" tabindex="-1">Informações</h1>
+      <p class="lead">Tudo o que precisas de saber sobre a CNC Plotter.</p>
+
+      <h2>Como funciona</h2>
+      <ol class="passos">
+        <li><strong>Desenha</strong> o teu trabalho num programa de design ou escolhe um ficheiro pronto.</li>
+        <li><strong>Prepara</strong> o ficheiro e envia-o para a máquina pelo computador.</li>
+        <li><strong>A caneta desenha</strong>: os motores levam a caneta pelo desenho e o servo levanta-a e baixa-a no papel.</li>
+      </ol>
+
+      <h2>Especificações</h2>
+
+      <div class="especs">
+
+        <!-- ÁREA DE TRABALHO -->
+        <article class="espec">
+          <div class="espec-texto">
+            <h3>Área de trabalho</h3>
+            <p class="valor" id="valor-area">Área útil aproximada: 240 × 240 mm</p>
+            <p>Os carris MGN15H têm 300 mm, mas o patim ocupa cerca de 59 mm. Por isso o curso útil de cada eixo fica perto de 240 mm. A zona a tracejado vermelho é a área útil.</p>
+            <p>A folha A4 (210 × 297 mm) tem o lado menor dentro da área útil. No lado maior só podes desenhar cerca de 240 mm.</p>
+            <p>Experimenta: ativa o desenho, move o rato sobre a folha e usa o scroll. Para cima levanta a caneta (o servo sobe), para baixo baixa-a (o servo desce).</p>
+          </div>
+          <figure class="espec-visual">
+            <!-- A plotter é a mesma da página inicial (plotter3d.js). Foto real: <img src="imagens/plotter.jpg" alt="Plotter de caneta CNC"> -->
+            <div class="livre-embrulho">
+              <div class="livre" id="livre-plotter" tabindex="0"></div>
+              <button type="button" class="testar-aqui" id="livre-testar">Clica aqui para testar</button>
+            </div>
+            <div class="livre-barra">
+              <button type="button" class="btn btn-principal" id="livre-ativar" aria-pressed="false">Desenhar com a plotter</button>
+              <button type="button" class="btn" id="livre-subir">Levantar caneta</button>
+              <button type="button" class="btn" id="livre-descer">Baixar caneta</button>
+              <button type="button" class="btn" id="livre-limpar">Limpar</button>
+            </div>
+            <figcaption class="legenda-peca" id="livre-estado" aria-live="polite"></figcaption>
+          </figure>
+        </article>
+
+        <!-- CABEÇOTE E CANETA (PCB) -->
+        <article class="espec">
+          <div class="espec-texto">
+            <h3>Cabeçote e caneta</h3>
+            <p class="valor">Markal LA-CO Dura-Ink 5 Preto Micro</p>
+            <p>A caneta fica num adaptador azul de 12.5 mm, encaixado num furo de 13 mm no suporte do eixo Z, impresso em 3D em PLA. Um micro servo SG90 levanta e baixa a placa Z.</p>
+            <p>Na demonstração, a caneta desenha pistas de circuito com tinta preta numa placa de PCB virgem de cobre. Clica e arrasta sobre a placa para desenhares as tuas.</p>
+          </div>
+          <figure class="espec-visual">
+            <div class="livre pcb-iso" id="pcb-plotter"></div>
+            <div class="pcb-controlos">
+              <button type="button" class="btn" id="pcb-repetir">Repetir demonstração</button>
+              <button type="button" class="btn" id="pcb-limpar">Limpar</button>
+            </div>
+            <figcaption class="legenda-peca" id="pcb-estado" aria-live="polite">Demonstração: a plotter desenha três pistas. Clica na placa para desenhares tu.</figcaption>
+          </figure>
+        </article>
+
+        <!-- MATERIAIS -->
+        <article class="espec alinha-topo">
+          <div class="espec-texto">
+            <h3>Materiais</h3>
+            <dl class="materiais">
+              <div class="destaque-material"><dt>Caneta</dt><dd>Caneta Markal LA-CO Dura-Ink 5 Preto Micro + Adaptador Azul de 12.5 mm</dd></div>
+              <div><dt>Fonte</dt><dd>Fonte de alimentação 12 V 5 A (60 W, IP20)</dd></div>
+              <div><dt>Cabo</dt><dd>Cabo de alimentação CEE7 / Schuko a bornes</dd></div>
+              <div><dt>Fins de curso</dt><dd>2× fins de curso mecânicos (RAMPS 1.4), um para o eixo X e outro para o Y</dd></div>
+              <div><dt>Servo</dt><dd>1× micro servo SG90 (9 g, 4.8–6 V)</dd></div>
+              <div><dt>Correia e polias</dt><dd>Correia GT2 (5 m, 6 mm) + 8 polias dentadas de 20 dentes (furo de 5 mm)</dd></div>
+              <div><dt>Carris</dt><dd>2× carris lineares com bloco deslizante (MGN15H, 300 mm)</dd></div>
+              <div><dt>Motores</dt><dd>Pack de 3× motores de passo NEMA 17 (1 A, 13 N·cm)</dd></div>
+              <div><dt>Eletrónica</dt><dd>Kit CNC Shield V3 + Arduino UNO + drivers DRV8825</dd></div>
+              <div><dt>Impressão 3D</dt><dd>Suporte do eixo Z e estrutura do cabeçote, impressos em 3D em PLA</dd></div>
+              <div><dt>Parafusos</dt><dd>Kit M3 em inox</dd></div>
+            </dl>
+          </div>
+          <figure class="espec-visual">
+            <div class="montagem" id="montagem-plotter"></div>
+            <div class="montagem-barra">
+              <button type="button" class="btn btn-principal" id="btn-montar">Montar</button>
+              <figcaption id="legenda-peca" class="legenda-peca" aria-live="polite">Faz scroll ou clica em Montar. Depois passa o cursor sobre as peças para ver os nomes.</figcaption>
+            </div>
+          </figure>
+        </article>
+
+        <!-- LIGAÇÃO AO COMPUTADOR -->
+        <article class="espec">
+          <div class="espec-texto">
+            <h3>Ligação ao computador</h3>
+            <p class="valor">Laptop ↔ Arduino UNO (USB-série)</p>
+            <p>O Laptop e o Arduino comunicam por porta série através do cabo USB. A placa tem um chip USB-série: CH340 nos clones e FTDI em algumas placas e adaptadores. O sistema precisa do driver desse chip para criar a porta COM.</p>
+            <ol class="passos passos-curtos">
+              <li>Instala o driver CH340 ou FTDI, conforme o chip da tua placa.</li>
+              <li>Liga o cabo USB. O Arduino aparece como uma porta COM.</li>
+              <li>No UGS escolhe o firmware GRBL, a porta COM e 115200 baud, e carrega em Connect.</li>
+              <li>O UGS envia o G-code linha a linha e a CNC Shield executa-o.</li>
+            </ol>
+          </div>
+          <figure class="espec-visual">
+            <svg viewBox="0 0 560 262" role="img" aria-label="Laptop ligado por USB-série (CH340 ou FTDI) ao Arduino UNO com CNC Shield, com o UGS a enviar o G-code">
+              <rect x="34" y="40" width="200" height="126" rx="9" fill="#20242B"/>
+              <rect x="44" y="50" width="180" height="106" rx="4" fill="#12151a"/>
+              <text x="54" y="66" font-size="10" fill="#9fd0ff" style="fill:#9fd0ff">UGS · COM · 115200</text>
+              <path d="M60 134 L92 86 L124 124 L156 78 L188 114 L208 94" fill="none" stroke="#F2F2EE" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" pathLength="100" class="traco"/>
+              <rect x="150" y="134" width="62" height="16" rx="3" fill="#3a8f6b"/>
+              <text x="181" y="146" text-anchor="middle" font-size="10" fill="#fff" style="fill:#fff">Enviar</text>
+              <path d="M16 166H252L240 180H28Z" fill="#C3C8CF" stroke="#8d949e"/>
+              <rect x="116" y="166" width="40" height="4" rx="2" fill="#8d949e"/>
+              <text x="134" y="208" text-anchor="middle" class="rot-svg">Laptop</text>
+
+              <path d="M250 173C292 173 292 103 338 103" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round"/>
+              <path class="cabo-dados" d="M250 173C292 173 292 103 338 103" fill="none" stroke="#2479DA" stroke-width="4" stroke-linecap="round"/>
+              <text x="292" y="226" text-anchor="middle" class="rot-svg" font-size="13">USB-série</text>
+              <text x="292" y="243" text-anchor="middle" class="rot-svg" font-size="12">CH340 / FTDI</text>
+              <text x="292" y="259" text-anchor="middle" class="rot-svg" font-size="12">COM · 115200 baud</text>
+
+              <rect x="336" y="86" width="30" height="34" rx="2" fill="#B0B6BD" stroke="#8d949e"/>
+              <rect x="350" y="56" width="184" height="130" rx="8" fill="#00979C"/>
+              <rect x="364" y="64" width="158" height="114" rx="4" fill="#C62828"/>
+              <rect x="372" y="68" width="142" height="6" fill="#20242B"/>
+              <rect x="372" y="168" width="142" height="6" fill="#20242B"/>
+              <rect x="384" y="86" width="30" height="46" fill="#5F3FA3"/><rect x="390" y="90" width="18" height="14" fill="#C3C8CF"/>
+              <rect x="424" y="86" width="30" height="46" fill="#5F3FA3"/><rect x="430" y="90" width="18" height="14" fill="#C3C8CF"/>
+              <rect x="464" y="86" width="30" height="46" fill="#5F3FA3"/><rect x="470" y="90" width="18" height="14" fill="#C3C8CF"/>
+              <rect x="378" y="142" width="26" height="22" fill="#1e5eb7"/>
+              <circle cx="438" cy="152" r="9" fill="#20242B"/><circle cx="438" cy="152" r="4" fill="#4b5260"/>
+              <circle cx="470" cy="152" r="9" fill="#20242B"/><circle cx="470" cy="152" r="4" fill="#4b5260"/>
+              <circle class="led" cx="357" cy="150" r="3" fill="#ffb347"/>
+              <circle class="led l2" cx="357" cy="162" r="3" fill="#ffb347"/>
+              <text x="442" y="208" text-anchor="middle" class="rot-svg">Arduino UNO + CNC Shield V3</text>
+            </svg>
+          </figure>
+        </article>
+
+      </div>
+
+      <div class="para-problemas">
+        <p>Vais montar a plotter? Vê os erros mais comuns e como os evitar.</p>
+        <button type="button" class="btn btn-principal" data-go="problemas">Problemas e diagnóstico</button>
+      </div>
+    </section>
+
+    <!-- TELA: PROBLEMAS E DIAGNÓSTICO -->
+    <section id="view-problemas" class="tela tela-texto tela-larga" aria-labelledby="t-problemas" hidden>
+      <h1 id="t-problemas" tabindex="-1">Problemas e diagnóstico</h1>
+      <p class="lead">Os erros mais comuns ao montar a plotter. A peça afetada pisca a vermelho e cada problema tem uma animação.</p>
+      <div id="problemas"></div>
+    </section>
+
+    <!-- TELA: DOWNLOADS -->
+    <section id="view-downloads" class="tela tela-texto" aria-labelledby="t-downloads" hidden>
+      <h1 id="t-downloads" tabindex="-1">Downloads</h1>
+      <p class="lead">As ferramentas que usamos para controlar a CNC Plotter.</p>
+
+      <!--
+        Ficheiros locais: copia-os para a pasta "downloads" com estes nomes
+          downloads/grbl-servo.zip              (firmware GRBL-Servo)
+          downloads/inkscape-gcode-servo.zip    (extensão G-code para servo Z)
+      -->
+      <div class="softwares">
+        <article class="software">
+          <div>
+            <h2>Arduino IDE <span class="etiqueta">com firmware GRBL-Servo</span></h2>
+            <p>Carrega o firmware GRBL-Servo no Arduino UNO. Abre o projeto, escolhe a placa Arduino Uno e a porta COM e carrega em Upload.</p>
+          </div>
+          <div class="software-acoes">
+            <a class="btn btn-principal" href="https://www.arduino.cc/en/software" target="_blank" rel="noopener">Descarregar Arduino IDE</a>
+            <a class="btn btn-principal" href="downloads/grbl-servo.zip" download>Descarregar firmware GRBL-Servo</a>
+            <a class="btn" href="https://github.com/vankesteren/grbl-servo" target="_blank" rel="noopener">Ver projeto GRBL-Servo</a>
+          </div>
+        </article>
+
+        <article class="software">
+          <div>
+            <h2>Universal G-Code Sender <span class="etiqueta">UGS Platform</span></h2>
+            <p>Envia o G-code para a plotter. Escolhe o firmware GRBL, a porta COM e 115200 baud, e liga. A versão UGS Platform já traz o Java integrado, por isso não precisas de o instalar.</p>
+          </div>
+          <div class="software-acoes">
+            <a class="btn btn-principal" href="https://winder.github.io/ugs_website/download/" target="_blank" rel="noopener">Descarregar UGS Platform</a>
+            <a class="btn" href="https://github.com/winder/Universal-G-Code-Sender/releases" target="_blank" rel="noopener">Versões no GitHub</a>
+          </div>
+        </article>
+
+        <article class="software">
+          <div>
+            <h2>Inkscape <span class="etiqueta">com extensão G-code para servo Z</span></h2>
+            <p>Desenha e exporta o G-code. Para instalar a extensão, copia a pasta para as extensões do utilizador (Editar &gt; Preferências &gt; Sistema &gt; Extensões do utilizador) e reinicia o Inkscape.</p>
+          </div>
+          <div class="software-acoes">
+            <a class="btn btn-principal" href="https://inkscape.org/release/" target="_blank" rel="noopener">Descarregar Inkscape</a>
+            <a class="btn btn-principal" href="downloads/inkscape-gcode-servo.zip" download>Descarregar extensão G-code</a>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- TELA: PLOTTER CONTROLLER -->
+    <section id="view-controller" class="tela tela-texto tela-larga" aria-labelledby="t-controller" hidden>
+      <div class="ctrl-topo">
+        <div>
+          <h1 id="t-controller" tabindex="-1">Plotter Controller</h1>
+          <p class="lead">Um programa para Windows que controla uma máquina CNC plotter de baixo custo.</p>
+        </div>
+        <div class="ctrl-descarregar">
+          <!-- O executável fica em downloads/Plotter_Controller.exe -->
+          <a class="btn btn-principal btn-grande" href="downloads/Plotter_Controller.exe" download>Descarregar para Windows</a>
+          <p>Plotter_Controller.exe · cerca de 31 MB · um único ficheiro .exe</p>
+        </div>
+      </div>
+
+      <section class="ctrl-sec revelar" aria-labelledby="t-ctrl-que-e">
+        <h2 id="t-ctrl-que-e">O que é</h2>
+        <div class="ctrl-que-e">
+          <div>
+            <p>O Plotter Controller é um programa para Windows que controla uma máquina CNC plotter de baixo custo. Essa máquina move uma caneta sobre o papel em coordenadas X e Y e desenha o que lhe mandam.</p>
+            <p>O programa envia as instruções para o Arduino, que as executa, e mostra o que está a acontecer num ecrã fácil de perceber.</p>
+          </div>
+          <figure class="janela">
+            <div class="janela-barra" aria-hidden="true"><span>Plotter Controller</span><i></i><i></i><i></i></div>
+            <div class="janela-corpo" data-cena="fluxo"></div>
+          </figure>
+        </div>
+      </section>
+
+      <section class="ctrl-sec" aria-labelledby="t-ctrl-consiste">
+        <h2 id="t-ctrl-consiste">O que consiste</h2>
+        <p class="nota">Faz scroll para veres cada parte do programa. As imagens são ilustrações dos ecrãs.</p>
+        <div class="recursos">
+        <article class="recurso">
+          <div class="recurso-texto">
+            <span class="recurso-num" aria-hidden="true">1</span>
+            <h3>Ligação ao Arduino</h3>
+            <p>Ligação ao Arduino por porta série, ou modo simulação para testar sem a máquina.</p>
+          </div>
+          <figure class="janela">
+            <div class="janela-barra" aria-hidden="true"><span>Plotter Controller</span><i></i><i></i><i></i></div>
+            <div class="janela-corpo" data-cena="liga"></div>
+          </figure>
+        </article>
+
+        <article class="recurso">
+          <div class="recurso-texto">
+            <span class="recurso-num" aria-hidden="true">2</span>
+            <h3>Painel de controlo</h3>
+            <p>Painel de controlo, com setas para mover a caneta, passos de 1 a 50 mm, botões para baixar e levantar a caneta e para definir a origem.</p>
+          </div>
+          <figure class="janela">
+            <div class="janela-barra" aria-hidden="true"><span>Plotter Controller</span><i></i><i></i><i></i></div>
+            <div class="janela-corpo" data-cena="controlo"></div>
+          </figure>
+        </article>
+
+        <article class="recurso">
+          <div class="recurso-texto">
+            <span class="recurso-num" aria-hidden="true">3</span>
+            <h3>Visualizador</h3>
+            <p>Visualizador da área útil de 200 × 200 mm, onde se vê a posição da caneta em tempo real e o traço que deixa no papel.</p>
+          </div>
+          <figure class="janela">
+            <div class="janela-barra" aria-hidden="true"><span>Plotter Controller</span><i></i><i></i><i></i></div>
+            <div class="janela-corpo" data-cena="visualizador"></div>
+          </figure>
+        </article>
+
+        <article class="recurso">
+          <div class="recurso-texto">
+            <span class="recurso-num" aria-hidden="true">4</span>
+            <h3>Terminal</h3>
+            <p>Terminal para escrever comandos G-code diretamente.</p>
+          </div>
+          <figure class="janela">
+            <div class="janela-barra" aria-hidden="true"><span>Plotter Controller</span><i></i><i></i><i></i></div>
+            <div class="janela-corpo" data-cena="terminal"></div>
+          </figure>
+        </article>
+
+        <article class="recurso">
+          <div class="recurso-texto">
+            <span class="recurso-num" aria-hidden="true">5</span>
+            <h3>Página G-code</h3>
+            <p>Página G-code para carregar e enviar programas completos.</p>
+          </div>
+          <figure class="janela">
+            <div class="janela-barra" aria-hidden="true"><span>Plotter Controller</span><i></i><i></i><i></i></div>
+            <div class="janela-corpo" data-cena="gcode"></div>
+          </figure>
+        </article>
+
+        <article class="recurso">
+          <div class="recurso-texto">
+            <span class="recurso-num" aria-hidden="true">6</span>
+            <h3>Página Imagens</h3>
+            <p>Página Imagens para converter uma imagem em desenho.</p>
+          </div>
+          <figure class="janela">
+            <div class="janela-barra" aria-hidden="true"><span>Plotter Controller</span><i></i><i></i><i></i></div>
+            <div class="janela-corpo" data-cena="imagens"></div>
+          </figure>
+        </article>
+
+        <article class="recurso">
+          <div class="recurso-texto">
+            <span class="recurso-num" aria-hidden="true">7</span>
+            <h3>Relatório</h3>
+            <p>Relatório com o histórico de movimentos, comandos e ligações, e os totais de distância percorrida.</p>
+          </div>
+          <figure class="janela">
+            <div class="janela-barra" aria-hidden="true"><span>Plotter Controller</span><i></i><i></i><i></i></div>
+            <div class="janela-corpo" data-cena="relatorio"></div>
+          </figure>
+        </article>
+
+        <article class="recurso">
+          <div class="recurso-texto">
+            <span class="recurso-num" aria-hidden="true">8</span>
+            <h3>Botões de emergência</h3>
+            <p>Botões de emergência para parar a máquina de imediato.</p>
+          </div>
+          <figure class="janela">
+            <div class="janela-barra" aria-hidden="true"><span>Plotter Controller</span><i></i><i></i><i></i></div>
+            <div class="janela-corpo" data-cena="emergencia"></div>
+          </figure>
+        </article>
+        </div>
+      </section>
+
+      <section class="ctrl-sec revelar" aria-labelledby="t-ctrl-serve">
+        <h2 id="t-ctrl-serve">Para que serve</h2>
+        <ul class="ctrl-lista">
+          <li>Ensinar e demonstrar o funcionamento de uma CNC plotter sem ser preciso conhecer G-code em profundidade.</li>
+          <li>Testar e calibrar a máquina, verificando movimentos e a caneta antes de desenhar.</li>
+          <li>Registar a atividade da máquina, o que ajuda na documentação da PAP.</li>
+          <li>Permitir experimentar o programa sem hardware, graças ao modo simulação.</li>
+        </ul>
+      </section>
+
+      <section class="ctrl-sec revelar" aria-labelledby="t-ctrl-porque">
+        <h2 id="t-ctrl-porque">Porque usar esta e não outra</h2>
+        <p>Existem outros programas, como o Universal Gcode Sender (UGS) ou o Candle. São poderosos, mas foram pensados para máquinas genéricas, muitas vezes em inglês, e podem ser complexos para quem está a começar. O Plotter Controller tem outro foco:</p>
+        <div class="tabela-wrap">
+          <table class="comparacao">
+            <thead><tr><th scope="col">Aspeto</th><th scope="col">Plotter Controller</th><th scope="col">UGS / Candle</th></tr></thead>
+            <tbody>
+              <tr><th scope="row">Feito para esta máquina (caneta servo e área 200 × 200 mm)</th><td class="sim">Sim</td><td>Genérico</td></tr>
+              <tr><th scope="row">Interface em português</th><td class="sim">Sim</td><td>Principalmente inglês</td></tr>
+              <tr><th scope="row">Modo simulação para testar sem a máquina</th><td class="sim">Sim</td><td>Não é o foco</td></tr>
+              <tr><th scope="row">Histórico e relatório de atividade</th><td class="sim">Sim</td><td>Não</td></tr>
+              <tr><th scope="row">Instalação</th><td>Um único ficheiro .exe</td><td>Instalação própria de cada programa</td></tr>
+              <tr><th scope="row">Maturidade e número de funcionalidades</th><td>Limitada</td><td>Muito maior</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>Ou seja, o Plotter Controller não substitui o UGS em funcionalidades. A vantagem está em ser simples, em português, feito à medida desta máquina e fácil de descarregar e usar.</p>
+      </section>
+
+      <section class="ctrl-sec revelar" aria-labelledby="t-ctrl-limites">
+        <h2 id="t-ctrl-limites">Limitações</h2>
+        <ul class="ctrl-lista ctrl-limites">
+          <li>Testado sobretudo com a máquina em modo simulação; a parte com hardware real deve ser validada antes de dar garantias.</li>
+          <li>A tecla F11 (ecrã inteiro) ainda não está implementada.</li>
+          <li>Funciona apenas em Windows.</li>
+          <li>O logótipo foi gerado com uma ferramenta de inteligência artificial, e isso deve ser indicado na bibliografia da PAP.</li>
+        </ul>
+      </section>
+
+      <div class="ctrl-final revelar">
+        <p>Pronto para experimentar? O modo simulação permite testar sem a máquina.</p>
+        <a class="btn btn-principal btn-grande" href="downloads/Plotter_Controller.exe" download>Descarregar para Windows</a>
+      </div>
+    </section>
+
+    <!-- TELA: SUPORTE -->
+    <section id="view-suporte" class="tela tela-texto" aria-labelledby="t-suporte" hidden>
+      <h1 id="t-suporte" tabindex="-1">Suporte</h1>
+      <p class="lead">Problemas comuns e como resolvê-los.</p>
+
+      <div class="faq">
+        <details>
+          <summary>A caneta falha o traço ou não risca</summary>
+          <p>Confirma que a ponta toca no papel quando o servo baixa a caneta e que a tinta chega à ponta. Se o traço falhar a meio, a caneta pode estar a secar ou a pressionar pouco.</p>
+        </details>
+        <details>
+          <summary>A caneta carrega demais ou fura o papel</summary>
+          <p>O braço do servo está a empurrar demasiado. Volta a montar o braço a meio do curso (90°) e ajusta o ângulo no software.</p>
+        </details>
+        <details>
+          <summary>O desenho sai deslocado ou com os cantos tortos</summary>
+          <p>Verifica se as correias estão bem esticadas e se os parafusos das polias estão apertados. Confirma também que os patins deslizam sem prender.</p>
+        </details>
+        <details>
+          <summary>A máquina não liga ou o computador não a reconhece</summary>
+          <p>Confirma a fonte de 12 V e o cabo USB. Liga sempre o cabo USB ao portátil antes de ligar a fonte à tomada.</p>
+        </details>
+        <details>
+          <summary>Os motores vibram sem andar</summary>
+          <p>Pode ser a corrente (Vref) muito baixa ou as fases A e B trocadas. Vê o problema 7 na página Problemas.</p>
+        </details>
+      </div>
+
+      <div class="manual">
+        <div>
+          <h2>Manual de utilização</h2>
+          <p>Guia completo da máquina, em PDF.</p>
+        </div>
+        <!-- Copia o PDF para a pasta "manuais" com este nome (ou muda o href) -->
+        <div class="acoes">
+          <a class="btn" href="manuais/manual-de-utilizacao.pdf" target="_blank" rel="noopener">Abrir manual</a>
+          <a class="btn btn-principal" href="manuais/manual-de-utilizacao.pdf" download>Descarregar PDF</a>
+        </div>
+      </div>
+
+      <div class="contacto">
+        <p class="aviso">Se não achou a solução, mande e-mail para o suporte.</p>
+        <p id="estado-copia" class="estado" role="status" aria-live="polite"></p>
+        <button type="button" id="copiar-email" class="btn btn-principal" aria-label="Copiar o email de suporte"></button>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="rodape">© 2026 CNC Plotter</footer>
+
+  <!-- Botão de tema (canto inferior direito, em todas as telas) -->
+  <button type="button" id="tema" class="tema" role="switch" aria-checked="false" aria-label="Modo escuro" title="Mudar para modo escuro">
+    <svg class="tema-fundo tema-fundo-sol" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.6M12 18.9v2.6M2.5 12h2.6M18.9 12h2.6M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8"/></svg>
+    <svg class="tema-fundo tema-fundo-lua" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 14.2A8.6 8.6 0 0 1 9.8 3.5a8.6 8.6 0 1 0 10.7 10.7z"/></svg>
+    <span class="tema-bola" aria-hidden="true">
+      <svg class="icone-sol" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.6M12 18.9v2.6M2.5 12h2.6M18.9 12h2.6M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8"/></svg>
+      <svg class="icone-lua" viewBox="0 0 24 24"><path d="M20.5 14.2A8.6 8.6 0 0 1 9.8 3.5a8.6 8.6 0 1 0 10.7 10.7z"/></svg>
+    </span>
+  </button>
+
+  <script src="script.js"></script>
+  <script src="animacoes.js"></script>
+  <script src="plotter3d.js"></script>
+  <script src="problemas.js"></script>
+  <script src="controller.js"></script>
+</body>
+</html>
